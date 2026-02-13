@@ -69,7 +69,6 @@ pipeline {
         stage('Compare Accuracy') {
             steps {
                 script {
-        
                     withCredentials([string(credentialsId: 'best-metrics', variable: 'BEST_JSON')]) {
         
                         def best = readJSON text: BEST_JSON
@@ -84,19 +83,17 @@ pipeline {
                         echo "Stored MSE: ${bestMSE}"
         
                         if (currentR2 > bestR2 && currentMSE < bestMSE) {
-        
                             echo "Model improved on both R2 and MSE."
-                            env.MODEL_IMPROVED = "true"
-        
+                            modelImproved = true
                         } else {
-        
                             echo "Model did NOT improve."
-                            env.MODEL_IMPROVED = "false"
+                            modelImproved = false
                         }
                     }
                 }
             }
         }
+
 
 
 
@@ -106,7 +103,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    if (env.MODEL_IMPROVED == "true") {
+                    if (modelImproved) {
                         sh "docker build -t ${IMAGE_NAME}:${BUILD_TAG} -t ${IMAGE_NAME}:latest ."
                     } else {
                         echo "Skipping Docker build - model not improved."
@@ -116,14 +113,14 @@ pipeline {
         }
 
 
+
         // -------------------------
         // Stage 7: Push Docker Image (Conditional)
         // -------------------------
         stage('Push Docker Image') {
             steps {
                 script {
-                    if (env.MODEL_IMPROVED == "true") {
-        
+                    if (modelImproved) {
                         withCredentials([usernamePassword(
                             credentialsId: 'dock-creds',
                             usernameVariable: 'DOCKER_USER',
@@ -136,14 +133,13 @@ pipeline {
                             docker push ${IMAGE_NAME}:latest
                             '''
                         }
-        
                     } else {
                         echo "Skipping Docker push - model not improved."
                     }
                 }
             }
         }
-    }
+
 
 
     // -------------------------
