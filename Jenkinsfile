@@ -104,37 +104,46 @@ pipeline {
         // Stage 6: Build Docker Image (Conditional)
         // -------------------------
         stage('Build Docker Image') {
-            when {
-                expression { env.MODEL_IMPROVED == "true" }
-            }
             steps {
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_TAG} -t ${IMAGE_NAME}:latest ."
+                script {
+                    if (env.MODEL_IMPROVED == "true") {
+                        sh "docker build -t ${IMAGE_NAME}:${BUILD_TAG} -t ${IMAGE_NAME}:latest ."
+                    } else {
+                        echo "Skipping Docker build - model not improved."
+                    }
+                }
             }
         }
+
 
         // -------------------------
         // Stage 7: Push Docker Image (Conditional)
         // -------------------------
         stage('Push Docker Image') {
-            when {
-                expression { env.MODEL_IMPROVED == "true" }
-            }
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dock-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-
-                    sh '''
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                    docker push ${IMAGE_NAME}:${BUILD_TAG}
-                    docker push ${IMAGE_NAME}:latest
-                    '''
+                script {
+                    if (env.MODEL_IMPROVED == "true") {
+        
+                        withCredentials([usernamePassword(
+                            credentialsId: 'dock-creds',
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )]) {
+        
+                            sh '''
+                            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                            docker push ${IMAGE_NAME}:${BUILD_TAG}
+                            docker push ${IMAGE_NAME}:latest
+                            '''
+                        }
+        
+                    } else {
+                        echo "Skipping Docker push - model not improved."
+                    }
                 }
             }
         }
-    }
+
 
     // -------------------------
     // Task 5: Archive Artifacts
