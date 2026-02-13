@@ -52,14 +52,15 @@ pipeline {
                 script {
                     def metrics = readJSON file: 'app/artifacts/metrics.json'
         
-                    env.CURRENT_R2 = metrics.r2
-                    env.CURRENT_MSE = metrics.mse
+                    env.CURRENT_R2 = metrics.r2.toString()
+                    env.CURRENT_MSE = metrics.mse.toString()
         
                     echo "Current R2: ${env.CURRENT_R2}"
                     echo "Current MSE: ${env.CURRENT_MSE}"
                 }
             }
         }
+
 
 
         // -------------------------
@@ -73,10 +74,16 @@ pipeline {
         
                         def best = readJSON text: BEST_JSON
         
-                        echo "Stored R2: ${best.r2}"
-                        echo "Stored MSE: ${best.mse}"
+                        def currentR2 = env.CURRENT_R2 as BigDecimal
+                        def currentMSE = env.CURRENT_MSE as BigDecimal
         
-                        if (env.CURRENT_R2 > best.r2 && env.CURRENT_MSE < best.mse) {
+                        def bestR2 = best.r2 as BigDecimal
+                        def bestMSE = best.mse as BigDecimal
+        
+                        echo "Stored R2: ${bestR2}"
+                        echo "Stored MSE: ${bestMSE}"
+        
+                        if (currentR2 > bestR2 && currentMSE < bestMSE) {
         
                             echo "Model improved on both R2 and MSE."
                             env.MODEL_IMPROVED = "true"
@@ -90,6 +97,7 @@ pipeline {
                 }
             }
         }
+
 
 
         // -------------------------
