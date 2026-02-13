@@ -4,18 +4,23 @@ pipeline {
     environment {
         IMAGE_NAME = "2022bcs0138nissiveronika/wine-mlops"
         BUILD_TAG = "${env.BUILD_NUMBER}"
+        MODEL_IMPROVED = "false"
     }
 
     stages {
 
+        // -------------------------
         // Stage 1: Checkout
+        // -------------------------
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
 
+        // -------------------------
         // Stage 2: Setup Python Virtual Environment
+        // -------------------------
         stage('Setup Python Virtual Environment') {
             steps {
                 sh '''
@@ -27,7 +32,9 @@ pipeline {
             }
         }
 
+        // -------------------------
         // Stage 3: Train Model
+        // -------------------------
         stage('Train Model') {
             steps {
                 sh '''
@@ -37,11 +44,14 @@ pipeline {
             }
         }
 
+        // -------------------------
         // Stage 4: Read Accuracy
+        // -------------------------
         stage('Read Accuracy') {
             steps {
                 script {
                     def metrics = readJSON file: 'app/artifacts/metrics.json'
+
                     env.CURRENT_R2 = metrics.r2.toString()
                     env.CURRENT_MSE = metrics.mse.toString()
 
@@ -51,23 +61,27 @@ pipeline {
             }
         }
 
-
+        // -------------------------
         // Stage 5: Compare Accuracy
+        // -------------------------
         stage('Compare Accuracy') {
             steps {
                 script {
-
-                    env.MODEL_IMPROVED = "false"
 
                     withCredentials([string(credentialsId: 'best-metrics', variable: 'BEST_JSON')]) {
 
                         def best = readJSON text: BEST_JSON
 
-                        echo "Stored R2: ${best.r2}"
-                        echo "Stored MSE: ${best.mse}"
+                        float currentR2 = Float.parseFloat(env.CURRENT_R2)
+                        float currentMSE = Float.parseFloat(env.CURRENT_MSE)
 
-                        if (env.CURRENT_R2.toFloat() > best.r2.toFloat() &&
-                            env.CURRENT_MSE.toFloat() < best.mse.toFloat()) {
+                        float bestR2 = Float.parseFloat(best.r2.toString())
+                        float bestMSE = Float.parseFloat(best.mse.toString())
+
+                        echo "Stored R2: ${bestR2}"
+                        echo "Stored MSE: ${bestMSE}"
+
+                        if (currentR2 > bestR2 && currentMSE < bestMSE) {
 
                             echo "Model improved on both R2 and MSE."
                             env.MODEL_IMPROVED = "true"
@@ -75,16 +89,15 @@ pipeline {
                         } else {
 
                             echo "Model did NOT improve."
-                            env.MODEL_IMPROVED = "false"
                         }
                     }
                 }
             }
         }
 
-
-
+        // -------------------------
         // Stage 6: Build Docker Image (Conditional)
+        // -------------------------
         stage('Build Docker Image') {
             when {
                 expression { env.MODEL_IMPROVED == "true" }
@@ -94,7 +107,9 @@ pipeline {
             }
         }
 
+        // -------------------------
         // Stage 7: Push Docker Image (Conditional)
+        // -------------------------
         stage('Push Docker Image') {
             when {
                 expression { env.MODEL_IMPROVED == "true" }
@@ -116,7 +131,9 @@ pipeline {
         }
     }
 
+    // -------------------------
     // Task 5: Archive Artifacts
+    // -------------------------
     post {
         always {
             archiveArtifacts artifacts: 'app/artifacts/**', allowEmptyArchive: true
