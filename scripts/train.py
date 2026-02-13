@@ -34,7 +34,7 @@ print(f"R2: {r2}")
 
 os.makedirs("app/artifacts", exist_ok=True)
 
-joblib.dump(model, "app/artifacts/model/model.pkl")
+joblib.dump(model, "app/artifacts/model.pkl")
 
 metrics = {
     "mse": round(mse, 4),
