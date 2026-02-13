@@ -32,14 +32,19 @@ r2 = r2_score(y_test, y_pred)
 print(f"MSE: {mse}")
 print(f"R2: {r2}")
 
-joblib.dump(model, "model/model.pkl")
+os.makedirs("app/artifacts", exist_ok=True)
+
+joblib.dump(model, "app/artifacts/model/model.pkl")
 
 metrics = {
     "mse": round(mse, 4),
     "r2": round(r2, 4)
 }
 
-with open("metrics.json", "w") as f:
+
+
+with open("app/artifacts/metrics.json", "w") as f:
     json.dump(metrics, f)
+
 
 print("Training complete and metrics saved")
