@@ -51,15 +51,16 @@ pipeline {
             steps {
                 script {
                     def metrics = readJSON file: 'app/artifacts/metrics.json'
-
-                    env.CURRENT_R2 = metrics.r2.toString()
-                    env.CURRENT_MSE = metrics.mse.toString()
-
+        
+                    env.CURRENT_R2 = metrics.r2
+                    env.CURRENT_MSE = metrics.mse
+        
                     echo "Current R2: ${env.CURRENT_R2}"
                     echo "Current MSE: ${env.CURRENT_MSE}"
                 }
             }
         }
+
 
         // -------------------------
         // Stage 5: Compare Accuracy
@@ -67,33 +68,29 @@ pipeline {
         stage('Compare Accuracy') {
             steps {
                 script {
-
+        
                     withCredentials([string(credentialsId: 'best-metrics', variable: 'BEST_JSON')]) {
-
+        
                         def best = readJSON text: BEST_JSON
-
-                        float currentR2 = Float.parseFloat(env.CURRENT_R2)
-                        float currentMSE = Float.parseFloat(env.CURRENT_MSE)
-
-                        float bestR2 = Float.parseFloat(best.r2.toString())
-                        float bestMSE = Float.parseFloat(best.mse.toString())
-
-                        echo "Stored R2: ${bestR2}"
-                        echo "Stored MSE: ${bestMSE}"
-
-                        if (currentR2 > bestR2 && currentMSE < bestMSE) {
-
+        
+                        echo "Stored R2: ${best.r2}"
+                        echo "Stored MSE: ${best.mse}"
+        
+                        if (env.CURRENT_R2 > best.r2 && env.CURRENT_MSE < best.mse) {
+        
                             echo "Model improved on both R2 and MSE."
                             env.MODEL_IMPROVED = "true"
-
+        
                         } else {
-
+        
                             echo "Model did NOT improve."
+                            env.MODEL_IMPROVED = "false"
                         }
                     }
                 }
             }
         }
+
 
         // -------------------------
         // Stage 6: Build Docker Image (Conditional)
