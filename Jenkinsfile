@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "2022bcs0138nissiveronika/wine-model"
+        IMAGE_NAME = "2022bcs0138nissiveronika/wine-mlops"
         BUILD_TAG = "${env.BUILD_NUMBER}"
     }
 
@@ -56,7 +56,7 @@ pipeline {
         stage('Compare Accuracy') {
             steps {
                 script {
-                    
+
                     env.MODEL_IMPROVED = "false"
 
                     withCredentials([string(credentialsId: 'best-metrics', variable: 'BEST_JSON')]) {
