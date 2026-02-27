@@ -17,7 +17,17 @@ pipeline {
 
         stage('Pull Image') {
             steps {
-                sh "docker pull ${IMAGE_NAME}"
+                withCredentials([usernamePassword(
+                    credentialsId: 'dock-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+        
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    docker pull 2022bcs0138nissiveronika/wine-mlops:latest
+                    '''
+                }
             }
         }
 
