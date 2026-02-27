@@ -46,7 +46,7 @@ pipeline {
                     timeout(time: 40, unit: 'SECONDS') {
                         waitUntil {
                             def status = sh(
-                                script: "curl -s http://localhost:${PORT}/docs",
+                                script: "curl -s http://host.docker.internal:${PORT}/docs",
                                 returnStatus: true
                             )
                             return (status == 0)
@@ -60,7 +60,7 @@ pipeline {
             steps {
                 script {
                     def response = sh(
-                        script: "curl -s -X POST http://localhost:${PORT}/predict -H 'Content-Type: application/json' -d @test_inputs/valid.json",
+                        script: "curl -s -X POST http://host.docker.internal:${PORT}/predict -H 'Content-Type: application/json' -d @test_inputs/valid.json",
                         returnStdout: true
                     ).trim()
 
@@ -77,7 +77,7 @@ pipeline {
             steps {
                 script {
                     def code = sh(
-                        script: "curl -s -o /dev/null -w \"%{http_code}\" -X POST http://localhost:${PORT}/predict -H 'Content-Type: application/json' -d @test_inputs/invalid.json",
+                        script: "curl -s -o /dev/null -w \"%{http_code}\" -X POST http://host.docker.internal:${PORT}/predict -H 'Content-Type: application/json' -d @test_inputs/invalid.json",
                         returnStdout: true
                     ).trim()
 
