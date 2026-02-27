@@ -66,8 +66,8 @@ pipeline {
 
                     echo "Valid Response: ${response}"
 
-                    if (!response.contains("wine_quality")) {
-                        error("wine_quality field missing!")
+                    if (!response.contains("wrong_field")) {
+                        error("wrong_field missing!")
                     }
                 }
             }
